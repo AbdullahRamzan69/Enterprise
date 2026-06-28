@@ -6,95 +6,124 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { addEmployee, updateEmployee } from "@/features/employees/employeeSlice"
-import { selectEmployeeById, selectEmployees } from "@/features/employees/employeeSelectors"
-import type { Employee } from "@/features/employees/employeeTypes"
+import { addCustomer, updateCustomer } from "@/features/crm/crmSlice"
+import { selectCustomerById, selectAllCustomers } from "@/features/crm/crmSelectors"
+import { selectEmployees } from "@/features/employees/employeeSelectors"
+import type { Customer } from "@/features/crm/crmTypes"
 
-const DEPARTMENTS = ["HR", "Engineering", "Marketing", "Sales", "Finance", "Operations"]
-const EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Contract", "Intern"]
-const STATUSES = ["Active", "On Leave", "Resigned", "Suspended"]
+const STATUSES = ["Lead", "Contacted", "Negotiation", "Active Client", "Inactive"] as const
 
-type EmployeeFormData = Omit<Employee, "salary"> & { salary: string }
-
-const createEmployeeFormData = (employees: Employee[], employee?: Employee): EmployeeFormData => {
-  if (employee) {
-    return {
-      ...employee,
-      salary: employee.salary.toString(),
-    }
+const createCustomerFormData = (customers: Customer[], customer?: Customer): Customer => {
+  if (customer) {
+    return { ...customer }
   }
 
-  const ids = employees
-    .map((emp) => parseInt(emp.id.replace("EMP-", ""), 10))
+  const ids = customers
+    .map((c) => parseInt(c.id.replace("CUST-", ""), 10))
     .filter((num) => !isNaN(num))
-  const nextIdNum = ids.length > 0 ? Math.max(...ids) + 1 : 101
+  const nextIdNum = ids.length > 0 ? Math.max(...ids) + 1 : 1001
 
   return {
-    id: `EMP-${nextIdNum}`,
-    fullName: "",
+    id: `CUST-${nextIdNum}`,
+    companyName: "",
+    contactPerson: "",
     email: "",
     phone: "",
-    department: "Engineering",
-    designation: "",
-    employmentType: "Full-time",
-    joiningDate: new Date().toISOString().split("T")[0],
-    salary: "",
+    industry: "",
+    website: "",
     address: "",
-    status: "Active",
+    city: "",
+    country: "",
+    status: "Lead",
+    assignedEmployeeId: "",
+    assignedEmployeeName: "",
+    notes: "",
+    createdAt: new Date().toISOString(),
   }
 }
 
-export default function EmployeeForm() {
+export default function CRMForm() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
+  const customers = useAppSelector(selectAllCustomers)
+  const customer = useAppSelector((state) => (id ? selectCustomerById(state, id) : undefined))
   const employees = useAppSelector(selectEmployees)
-  const employee = useAppSelector((state) => (id ? selectEmployeeById(state, id) : undefined))
 
   const isEditMode = !!id
   const error =
-    isEditMode && id && !employee
-      ? `Employee with ID "${id}" was not found in database registry.`
+    isEditMode && id && !customer
+      ? `Client with ID "${id}" was not found in database registry.`
       : ""
 
   // Form State
-  const [formData, setFormData] = useState<EmployeeFormData>(() =>
-    createEmployeeFormData(employees, employee)
+  const [formData, setFormData] = useState<Customer>(() =>
+    createCustomerFormData(customers, customer)
   )
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+
+    if (name === "assignedEmployeeId") {
+      const emp = employees.find((emp) => emp.id === value)
+      setFormData((prev) => ({
+        ...prev,
+        assignedEmployeeId: value,
+        assignedEmployeeName: emp ? emp.fullName : "",
+      }))
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }))
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
     // Validation checks
-    if (!formData.fullName.trim()) return alert("Full Name is required.")
-    if (!formData.email.trim()) return alert("Email is required.")
-    if (!formData.designation.trim()) return alert("Designation is required.")
-    if (!formData.salary.trim() || isNaN(Number(formData.salary))) {
-      return alert("Please enter a valid salary amount.")
+    if (!formData.companyName.trim()) return alert("Company Name is required.")
+    
+    // Unique company name check (ignoring self if edit mode)
+    const duplicate = customers.find(
+      (c) => c.companyName.toLowerCase() === formData.companyName.trim().toLowerCase() && c.id !== formData.id
+    )
+    if (duplicate) return alert("Company Name must be unique.")
+
+    if (!formData.contactPerson.trim()) return alert("Contact Person is required.")
+    
+    // Basic Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!formData.email.trim() || !emailRegex.test(formData.email)) {
+      return alert("A valid email is required.")
     }
 
-    const payload: Employee = {
-      ...formData,
-      salary: Number(formData.salary),
+    // Basic Phone validation (minimum 10 characters if provided, though we require it)
+    if (!formData.phone.trim() || formData.phone.length < 5) {
+       return alert("A valid phone number is required.")
     }
+
+    // URL validation if provided
+    if (formData.website.trim()) {
+      try {
+        new URL(formData.website)
+      } catch {
+        return alert("Website must be a valid URL (e.g., https://example.com).")
+      }
+    }
+
+    if (!formData.assignedEmployeeId) return alert("An Account Manager must be assigned.")
 
     if (isEditMode) {
-      dispatch(updateEmployee({ id: formData.id, updated: payload }))
+      dispatch(updateCustomer(formData))
     } else {
-      dispatch(addEmployee(payload))
+      dispatch(addCustomer(formData))
     }
 
-    navigate("/employees")
+    navigate("/crm")
   }
 
   if (error) {
@@ -107,9 +136,9 @@ export default function EmployeeForm() {
           <h2 className="text-lg font-bold text-foreground">Record Not Found</h2>
           <p className="text-xs text-muted-foreground leading-normal">{error}</p>
           <Button asChild size="sm" className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs rounded-lg mt-2">
-            <Link to="/employees">
+            <Link to="/crm">
               <ArrowLeft className="w-4 h-4 mr-1.5" />
-              Return to Directory
+              Return to CRM
             </Link>
           </Button>
         </div>
@@ -127,16 +156,16 @@ export default function EmployeeForm() {
           asChild
           className="h-8 w-8 rounded-lg border-border/80 text-muted-foreground hover:text-foreground shrink-0"
         >
-          <Link to="/employees">
+          <Link to="/crm">
             <ArrowLeft className="w-4 h-4" />
           </Link>
         </Button>
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            {isEditMode ? "Modify Employee File" : "Register Employee Profile"}
+            {isEditMode ? "Modify Client Record" : "Add New Client"}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {isEditMode ? `Updating database records for ${formData.fullName}` : "Initiate setup details for a new hire."}
+            {isEditMode ? `Updating database records for ${formData.companyName}` : "Create a new CRM record."}
           </p>
         </div>
       </div>
@@ -146,7 +175,7 @@ export default function EmployeeForm() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base font-bold text-foreground">
-                {isEditMode ? "Edit Profile Records" : "New Employee Information"}
+                {isEditMode ? "Edit Client Info" : "New Client Information"}
               </CardTitle>
               <CardDescription className="text-xs">
                 Fill all required fields to sync the profile in the central directory.
@@ -162,16 +191,32 @@ export default function EmployeeForm() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Grid Form */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-              {/* Full Name */}
+              
+              {/* Company Name */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Full Name <span className="text-destructive">*</span>
+                  Company Name <span className="text-destructive">*</span>
                 </label>
                 <Input
-                  name="fullName"
-                  value={formData.fullName}
+                  name="companyName"
+                  value={formData.companyName}
                   onChange={handleChange}
-                  placeholder="e.g. Sarah Jenkins"
+                  placeholder="e.g. Acme Corp"
+                  required
+                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs"
+                />
+              </div>
+
+              {/* Contact Person */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Primary Contact <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  name="contactPerson"
+                  value={formData.contactPerson}
+                  onChange={handleChange}
+                  placeholder="e.g. John Doe"
                   required
                   className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs"
                 />
@@ -187,7 +232,7 @@ export default function EmployeeForm() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="e.g. sarah.jenkins@company.com"
+                  placeholder="e.g. contact@acmecorp.com"
                   required
                   className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs"
                 />
@@ -196,106 +241,79 @@ export default function EmployeeForm() {
               {/* Phone Number */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Phone Number
+                  Phone Number <span className="text-destructive">*</span>
                 </label>
                 <Input
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="e.g. +1 (555) 019-2834"
-                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs"
-                />
-              </div>
-
-              {/* Department Dropdown */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Department
-                </label>
-                <select
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  className="flex h-8.5 w-full items-center justify-between rounded-lg border border-border/80 bg-muted/10 dark:bg-card px-3 py-1.5 text-xs text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {DEPARTMENTS.map((dept) => (
-                    <option key={dept} value={dept}>
-                      {dept}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Designation */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Designation <span className="text-destructive">*</span>
-                </label>
-                <Input
-                  name="designation"
-                  value={formData.designation}
-                  onChange={handleChange}
-                  placeholder="e.g. Senior Product Manager"
                   required
                   className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs"
                 />
               </div>
 
-              {/* Employment Type Dropdown */}
+              {/* Industry */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Employment Type
-                </label>
-                <select
-                  name="employmentType"
-                  value={formData.employmentType}
-                  onChange={handleChange}
-                  className="flex h-8.5 w-full items-center justify-between rounded-lg border border-border/80 bg-muted/10 dark:bg-card px-3 py-1.5 text-xs text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
-                >
-                  {EMPLOYMENT_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Joining Date */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Joining Date
+                  Industry
                 </label>
                 <Input
-                  type="date"
-                  name="joiningDate"
-                  value={formData.joiningDate}
+                  name="industry"
+                  value={formData.industry}
                   onChange={handleChange}
-                  required
-                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs font-mono"
+                  placeholder="e.g. Technology"
+                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs"
                 />
               </div>
 
-              {/* Salary (USD per year) */}
+              {/* Website */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Annual Salary ($ USD) <span className="text-destructive">*</span>
+                  Website
                 </label>
                 <Input
-                  type="number"
-                  name="salary"
-                  value={formData.salary}
+                  type="url"
+                  name="website"
+                  value={formData.website}
                   onChange={handleChange}
-                  placeholder="e.g. 85000"
-                  required
-                  min="0"
-                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs font-mono"
+                  placeholder="e.g. https://acmecorp.com"
+                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs"
+                />
+              </div>
+
+              {/* City */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  City
+                </label>
+                <Input
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  placeholder="e.g. New York"
+                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs"
+                />
+              </div>
+
+              {/* Country */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Country
+                </label>
+                <Input
+                  name="country"
+                  value={formData.country}
+                  onChange={handleChange}
+                  placeholder="e.g. USA"
+                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs"
                 />
               </div>
 
               {/* Status Dropdown */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Employment Status
+                  Client Status
                 </label>
                 <select
                   name="status"
@@ -311,20 +329,57 @@ export default function EmployeeForm() {
                 </select>
               </div>
 
+              {/* Account Manager Dropdown */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Account Manager <span className="text-destructive">*</span>
+                </label>
+                <select
+                  name="assignedEmployeeId"
+                  value={formData.assignedEmployeeId}
+                  onChange={handleChange}
+                  required
+                  className="flex h-8.5 w-full items-center justify-between rounded-lg border border-border/80 bg-muted/10 dark:bg-card px-3 py-1.5 text-xs text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+                >
+                  <option value="" disabled>Select an Account Manager</option>
+                  {employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.fullName} ({emp.designation})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Address (Span full-width) */}
               <div className="space-y-2 md:col-span-2">
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Home Address
+                  Address
                 </label>
                 <textarea
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
-                  placeholder="e.g. 742 Evergreen Terrace, Springfield, IL"
+                  placeholder="e.g. 123 Business Rd, Suite 400"
                   rows={2}
                   className="flex w-full rounded-lg border border-border/80 bg-muted/10 dark:bg-card px-3 py-2 text-xs text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring"
                 />
               </div>
+
+              {/* Notes (Span full-width) */}
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Notes
+                </label>
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleChange}
+                  placeholder="Additional context or internal notes..."
+                  rows={3}
+                  className="flex w-full rounded-lg border border-border/80 bg-muted/10 dark:bg-card px-3 py-2 text-xs text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </div>
+
             </div>
 
             {/* Form Footer Action Buttons */}
@@ -335,14 +390,14 @@ export default function EmployeeForm() {
                 asChild
                 className="border-border/80 hover:bg-muted text-foreground text-xs rounded-lg"
               >
-                <Link to="/employees">Cancel</Link>
+                <Link to="/crm">Cancel</Link>
               </Button>
               <Button
                 type="submit"
                 className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold text-xs rounded-lg shadow-sm flex items-center gap-1.5"
               >
                 <Save className="w-4 h-4" />
-                <span>{isEditMode ? "Save Changes" : "Create Profile"}</span>
+                <span>{isEditMode ? "Save Changes" : "Create Client"}</span>
               </Button>
             </div>
           </form>

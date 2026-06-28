@@ -1,28 +1,11 @@
-import { createContext, useContext, useEffect, useState } from "react"
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
+import type { Employee } from "./employeeTypes"
 
-export interface Employee {
-  id: string
-  fullName: string
-  email: string
-  phone: string
-  department: string
-  designation: string
-  employmentType: "Full-time" | "Part-time" | "Contract" | "Intern"
-  joiningDate: string // YYYY-MM-DD
-  salary: number
-  address: string
-  status: "Active" | "On Leave" | "Resigned" | "Suspended"
-}
-
-interface EmployeesContextType {
+export interface EmployeesState {
   employees: Employee[]
-  addEmployee: (employee: Employee) => void
-  updateEmployee: (id: string, updated: Partial<Employee>) => void
-  deleteEmployee: (id: string) => void
-  getEmployeeById: (id: string) => Employee | undefined
 }
 
-const EmployeesContext = createContext<EmployeesContextType | undefined>(undefined)
+export const EMPLOYEES_STORAGE_KEY = "aethel-ebms-employees"
 
 const initialMockEmployees: Employee[] = [
   {
@@ -98,7 +81,7 @@ const initialMockEmployees: Employee[] = [
     department: "HR",
     designation: "Talent Acquisition Specialist",
     employmentType: "Part-time",
-    joiningDate: "2026-06-01", // New Joiner (under 30 days from June 21, 2026)
+    joiningDate: "2026-06-01",
     salary: 50000,
     address: "555 Maple Drive, Hill Valley",
     status: "Active",
@@ -124,7 +107,7 @@ const initialMockEmployees: Employee[] = [
     department: "Engineering",
     designation: "Junior Developer",
     employmentType: "Intern",
-    joiningDate: "2026-06-15", // New Joiner (under 30 days from June 21, 2026)
+    joiningDate: "2026-06-15",
     salary: 35000,
     address: "777 TARDIS Court, London",
     status: "Active",
@@ -144,53 +127,51 @@ const initialMockEmployees: Employee[] = [
   },
 ]
 
-export function EmployeesProvider({ children }: { children: React.ReactNode }) {
-  const [employees, setEmployees] = useState<Employee[]>(() => {
-    const saved = localStorage.getItem("aethel-ebms-employees")
-    return saved ? JSON.parse(saved) : initialMockEmployees
-  })
-
-  useEffect(() => {
-    localStorage.setItem("aethel-ebms-employees", JSON.stringify(employees))
-  }, [employees])
-
-  const addEmployee = (employee: Employee) => {
-    setEmployees((prev) => [...prev, employee])
+const loadInitialEmployees = (): Employee[] => {
+  if (typeof window === "undefined") {
+    return initialMockEmployees
   }
 
-  const updateEmployee = (id: string, updated: Partial<Employee>) => {
-    setEmployees((prev) =>
-      prev.map((emp) => (emp.id === id ? { ...emp, ...updated } : emp))
-    )
+  const savedEmployees = window.localStorage.getItem(EMPLOYEES_STORAGE_KEY)
+
+  if (!savedEmployees) {
+    return initialMockEmployees
   }
 
-  const deleteEmployee = (id: string) => {
-    setEmployees((prev) => prev.filter((emp) => emp.id !== id))
+  try {
+    return JSON.parse(savedEmployees) as Employee[]
+  } catch {
+    return initialMockEmployees
   }
-
-  const getEmployeeById = (id: string) => {
-    return employees.find((emp) => emp.id === id)
-  }
-
-  return (
-    <EmployeesContext.Provider
-      value={{
-        employees,
-        addEmployee,
-        updateEmployee,
-        deleteEmployee,
-        getEmployeeById,
-      }}
-    >
-      {children}
-    </EmployeesContext.Provider>
-  )
 }
 
-export function useEmployees() {
-  const context = useContext(EmployeesContext)
-  if (!context) {
-    throw new Error("useEmployees must be used within an EmployeesProvider")
-  }
-  return context
+const initialState: EmployeesState = {
+  employees: loadInitialEmployees(),
 }
+
+const employeeSlice = createSlice({
+  name: "employees",
+  initialState,
+  reducers: {
+    addEmployee: (state, action: PayloadAction<Employee>) => {
+      state.employees.push(action.payload)
+    },
+    updateEmployee: (
+      state,
+      action: PayloadAction<{ id: string; updated: Partial<Employee> }>
+    ) => {
+      const employee = state.employees.find((emp) => emp.id === action.payload.id)
+
+      if (employee) {
+        Object.assign(employee, action.payload.updated)
+      }
+    },
+    deleteEmployee: (state, action: PayloadAction<string>) => {
+      state.employees = state.employees.filter((emp) => emp.id !== action.payload)
+    },
+  },
+})
+
+export const { addEmployee, updateEmployee, deleteEmployee } = employeeSlice.actions
+export default employeeSlice.reducer
+

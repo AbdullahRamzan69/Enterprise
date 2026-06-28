@@ -1,100 +1,118 @@
 import { useState } from "react"
-import { useNavigate, useParams, Link } from "react-router-dom"
-import { ArrowLeft, Save, AlertCircle } from "lucide-react"
+import { Link, useNavigate, useParams } from "react-router-dom"
+import { AlertCircle, ArrowLeft, Save } from "lucide-react"
 import { useAppDispatch, useAppSelector } from "@/app/store"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { addEmployee, updateEmployee } from "@/features/employees/employeeSlice"
-import { selectEmployeeById, selectEmployees } from "@/features/employees/employeeSelectors"
-import type { Employee } from "@/features/employees/employeeTypes"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { addCandidate, updateCandidate } from "@/features/recruitment/recruitmentSlice"
+import { selectCandidateById, selectCandidates } from "@/features/recruitment/recruitmentSelectors"
+import {
+  CANDIDATE_STATUSES,
+  DEPARTMENTS,
+  isValidEmail,
+  isValidPhone,
+  type Candidate,
+} from "@/features/recruitment/recruitmentTypes"
 
-const DEPARTMENTS = ["HR", "Engineering", "Marketing", "Sales", "Finance", "Operations"]
-const EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Contract", "Intern"]
-const STATUSES = ["Active", "On Leave", "Resigned", "Suspended"]
+type CandidateFormData = Omit<Candidate, "experience" | "expectedSalary"> & {
+  experience: string
+  expectedSalary: string
+}
 
-type EmployeeFormData = Omit<Employee, "salary"> & { salary: string }
-
-const createEmployeeFormData = (employees: Employee[], employee?: Employee): EmployeeFormData => {
-  if (employee) {
+const createCandidateFormData = (candidates: Candidate[], candidate?: Candidate): CandidateFormData => {
+  if (candidate) {
     return {
-      ...employee,
-      salary: employee.salary.toString(),
+      ...candidate,
+      experience: candidate.experience.toString(),
+      expectedSalary: candidate.expectedSalary.toString(),
     }
   }
 
-  const ids = employees
-    .map((emp) => parseInt(emp.id.replace("EMP-", ""), 10))
+  const ids = candidates
+    .map((item) => parseInt(item.id.replace("CAN-", ""), 10))
     .filter((num) => !isNaN(num))
-  const nextIdNum = ids.length > 0 ? Math.max(...ids) + 1 : 101
+  const nextIdNum = ids.length > 0 ? Math.max(...ids) + 1 : 1001
+  const today = new Date().toISOString().split("T")[0]
 
   return {
-    id: `EMP-${nextIdNum}`,
+    id: `CAN-${nextIdNum}`,
     fullName: "",
     email: "",
     phone: "",
+    position: "",
     department: "Engineering",
-    designation: "",
-    employmentType: "Full-time",
-    joiningDate: new Date().toISOString().split("T")[0],
-    salary: "",
-    address: "",
-    status: "Active",
+    experience: "",
+    expectedSalary: "",
+    appliedDate: today,
+    interviewDate: "",
+    interviewer: "",
+    status: "Applied",
+    notes: "",
   }
 }
 
-export default function EmployeeForm() {
+export default function RecruitmentForm() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const employees = useAppSelector(selectEmployees)
-  const employee = useAppSelector((state) => (id ? selectEmployeeById(state, id) : undefined))
+  const candidates = useAppSelector(selectCandidates)
+  const candidate = useAppSelector((state) => (id ? selectCandidateById(state, id) : undefined))
 
   const isEditMode = !!id
   const error =
-    isEditMode && id && !employee
-      ? `Employee with ID "${id}" was not found in database registry.`
+    isEditMode && id && !candidate
+      ? `Candidate with ID "${id}" was not found in the recruitment registry.`
       : ""
 
-  // Form State
-  const [formData, setFormData] = useState<EmployeeFormData>(() =>
-    createEmployeeFormData(employees, employee)
+  const [formData, setFormData] = useState<CandidateFormData>(() =>
+    createCandidateFormData(candidates, candidate)
   )
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = e.target
+    const { name, value } = event.target
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
 
-    // Validation checks
     if (!formData.fullName.trim()) return alert("Full Name is required.")
     if (!formData.email.trim()) return alert("Email is required.")
-    if (!formData.designation.trim()) return alert("Designation is required.")
-    if (!formData.salary.trim() || isNaN(Number(formData.salary))) {
-      return alert("Please enter a valid salary amount.")
+    if (!isValidEmail(formData.email)) return alert("Please enter a valid email address.")
+    if (!formData.phone.trim()) return alert("Phone number is required.")
+    if (!isValidPhone(formData.phone)) return alert("Please enter a valid phone number (10–15 digits).")
+    if (!formData.position.trim()) return alert("Position is required.")
+    if (!formData.experience.trim() || isNaN(Number(formData.experience))) {
+      return alert("Please enter a valid experience value.")
     }
+    if (Number(formData.experience) <= 0) return alert("Experience must be a positive number.")
+    if (!formData.expectedSalary.trim() || isNaN(Number(formData.expectedSalary))) {
+      return alert("Please enter a valid expected salary.")
+    }
+    if (Number(formData.expectedSalary) <= 0) return alert("Expected salary must be a positive number.")
 
-    const payload: Employee = {
+    const payload: Candidate = {
       ...formData,
-      salary: Number(formData.salary),
+      experience: Number(formData.experience),
+      expectedSalary: Number(formData.expectedSalary),
+      interviewDate: formData.interviewDate || undefined,
+      interviewer: formData.interviewer || undefined,
     }
 
     if (isEditMode) {
-      dispatch(updateEmployee({ id: formData.id, updated: payload }))
+      dispatch(updateCandidate({ id: formData.id, updated: payload }))
     } else {
-      dispatch(addEmployee(payload))
+      dispatch(addCandidate(payload))
     }
 
-    navigate("/employees")
+    navigate("/recruitment")
   }
 
   if (error) {
@@ -107,9 +125,9 @@ export default function EmployeeForm() {
           <h2 className="text-lg font-bold text-foreground">Record Not Found</h2>
           <p className="text-xs text-muted-foreground leading-normal">{error}</p>
           <Button asChild size="sm" className="bg-primary hover:bg-primary/95 text-primary-foreground text-xs rounded-lg mt-2">
-            <Link to="/employees">
+            <Link to="/recruitment">
               <ArrowLeft className="w-4 h-4 mr-1.5" />
-              Return to Directory
+              Return to Pipeline
             </Link>
           </Button>
         </div>
@@ -119,7 +137,6 @@ export default function EmployeeForm() {
 
   return (
     <div className="space-y-6 select-none animate-in fade-in duration-300">
-      {/* Top Header */}
       <div className="flex items-center gap-3">
         <Button
           variant="outline"
@@ -127,16 +144,16 @@ export default function EmployeeForm() {
           asChild
           className="h-8 w-8 rounded-lg border-border/80 text-muted-foreground hover:text-foreground shrink-0"
         >
-          <Link to="/employees">
+          <Link to="/recruitment">
             <ArrowLeft className="w-4 h-4" />
           </Link>
         </Button>
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            {isEditMode ? "Modify Employee File" : "Register Employee Profile"}
+            {isEditMode ? "Modify Candidate Profile" : "Register New Candidate"}
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {isEditMode ? `Updating database records for ${formData.fullName}` : "Initiate setup details for a new hire."}
+            {isEditMode ? `Updating recruitment records for ${formData.fullName}` : "Add a new applicant to the hiring pipeline."}
           </p>
         </div>
       </div>
@@ -146,10 +163,10 @@ export default function EmployeeForm() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-base font-bold text-foreground">
-                {isEditMode ? "Edit Profile Records" : "New Employee Information"}
+                {isEditMode ? "Edit Candidate Records" : "New Candidate Information"}
               </CardTitle>
               <CardDescription className="text-xs">
-                Fill all required fields to sync the profile in the central directory.
+                Fill all required fields to sync the profile in the recruitment pipeline.
               </CardDescription>
             </div>
             <Badge variant="outline" className="font-mono bg-muted/40 text-xs font-semibold px-2 py-0.5 rounded">
@@ -160,9 +177,7 @@ export default function EmployeeForm() {
 
         <CardContent className="p-6 md:p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Grid Form */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-              {/* Full Name */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
                   Full Name <span className="text-destructive">*</span>
@@ -171,13 +186,12 @@ export default function EmployeeForm() {
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
-                  placeholder="e.g. Sarah Jenkins"
+                  placeholder="e.g. Alexandra Rivera"
                   required
                   className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs"
                 />
               </div>
 
-              {/* Email Address */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
                   Email Address <span className="text-destructive">*</span>
@@ -187,27 +201,40 @@ export default function EmployeeForm() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="e.g. sarah.jenkins@company.com"
+                  placeholder="e.g. candidate@email.com"
                   required
                   className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs"
                 />
               </div>
 
-              {/* Phone Number */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Phone Number
+                  Phone Number <span className="text-destructive">*</span>
                 </label>
                 <Input
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="e.g. +1 (555) 019-2834"
+                  required
                   className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs"
                 />
               </div>
 
-              {/* Department Dropdown */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Position <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  name="position"
+                  value={formData.position}
+                  onChange={handleChange}
+                  placeholder="e.g. Senior React Developer"
+                  required
+                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs"
+                />
+              </div>
+
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
                   Department
@@ -216,7 +243,7 @@ export default function EmployeeForm() {
                   name="department"
                   value={formData.department}
                   onChange={handleChange}
-                  className="flex h-8.5 w-full items-center justify-between rounded-lg border border-border/80 bg-muted/10 dark:bg-card px-3 py-1.5 text-xs text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-8.5 w-full items-center justify-between rounded-lg border border-border/80 bg-muted/10 dark:bg-card px-3 py-1.5 text-xs text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
                 >
                   {DEPARTMENTS.map((dept) => (
                     <option key={dept} value={dept}>
@@ -226,108 +253,113 @@ export default function EmployeeForm() {
                 </select>
               </div>
 
-              {/* Designation */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Designation <span className="text-destructive">*</span>
+                  Experience (years) <span className="text-destructive">*</span>
                 </label>
                 <Input
-                  name="designation"
-                  value={formData.designation}
+                  type="number"
+                  name="experience"
+                  value={formData.experience}
                   onChange={handleChange}
-                  placeholder="e.g. Senior Product Manager"
+                  placeholder="e.g. 5"
                   required
+                  min="1"
+                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs font-mono"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Expected Salary ($ USD) <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  type="number"
+                  name="expectedSalary"
+                  value={formData.expectedSalary}
+                  onChange={handleChange}
+                  placeholder="e.g. 95000"
+                  required
+                  min="1"
+                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs font-mono"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Applied Date
+                </label>
+                <Input
+                  type="date"
+                  name="appliedDate"
+                  value={formData.appliedDate}
+                  onChange={handleChange}
+                  required
+                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs font-mono"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Interview Date
+                </label>
+                <Input
+                  type="date"
+                  name="interviewDate"
+                  value={formData.interviewDate ?? ""}
+                  onChange={handleChange}
+                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs font-mono"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Interviewer
+                </label>
+                <Input
+                  name="interviewer"
+                  value={formData.interviewer ?? ""}
+                  onChange={handleChange}
+                  placeholder="e.g. Michael Chen"
                   className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs"
                 />
               </div>
 
-              {/* Employment Type Dropdown */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Employment Type
-                </label>
-                <select
-                  name="employmentType"
-                  value={formData.employmentType}
-                  onChange={handleChange}
-                  className="flex h-8.5 w-full items-center justify-between rounded-lg border border-border/80 bg-muted/10 dark:bg-card px-3 py-1.5 text-xs text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
-                >
-                  {EMPLOYMENT_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {isEditMode && (
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    className="flex h-8.5 w-full items-center justify-between rounded-lg border border-border/80 bg-muted/10 dark:bg-card px-3 py-1.5 text-xs text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+                  >
+                    {CANDIDATE_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
-              {/* Joining Date */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Joining Date
-                </label>
-                <Input
-                  type="date"
-                  name="joiningDate"
-                  value={formData.joiningDate}
-                  onChange={handleChange}
-                  required
-                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs font-mono"
-                />
-              </div>
-
-              {/* Salary (USD per year) */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Annual Salary ($ USD) <span className="text-destructive">*</span>
-                </label>
-                <Input
-                  type="number"
-                  name="salary"
-                  value={formData.salary}
-                  onChange={handleChange}
-                  placeholder="e.g. 85000"
-                  required
-                  min="0"
-                  className="bg-muted/10 border-border/80 focus-visible:ring-1 focus-visible:ring-primary rounded-lg text-xs font-mono"
-                />
-              </div>
-
-              {/* Status Dropdown */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Employment Status
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="flex h-8.5 w-full items-center justify-between rounded-lg border border-border/80 bg-muted/10 dark:bg-card px-3 py-1.5 text-xs text-foreground outline-none focus:border-ring focus:ring-1 focus:ring-ring"
-                >
-                  {STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Address (Span full-width) */}
               <div className="space-y-2 md:col-span-2">
                 <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  Home Address
+                  Notes
                 </label>
                 <textarea
-                  name="address"
-                  value={formData.address}
+                  name="notes"
+                  value={formData.notes}
                   onChange={handleChange}
-                  placeholder="e.g. 742 Evergreen Terrace, Springfield, IL"
-                  rows={2}
+                  placeholder="Recruiter notes, interview feedback, or referral details."
+                  rows={3}
                   className="flex w-full rounded-lg border border-border/80 bg-muted/10 dark:bg-card px-3 py-2 text-xs text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring"
                 />
               </div>
             </div>
 
-            {/* Form Footer Action Buttons */}
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/50">
               <Button
                 type="button"
@@ -335,14 +367,14 @@ export default function EmployeeForm() {
                 asChild
                 className="border-border/80 hover:bg-muted text-foreground text-xs rounded-lg"
               >
-                <Link to="/employees">Cancel</Link>
+                <Link to="/recruitment">Cancel</Link>
               </Button>
               <Button
                 type="submit"
                 className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold text-xs rounded-lg shadow-sm flex items-center gap-1.5"
               >
                 <Save className="w-4 h-4" />
-                <span>{isEditMode ? "Save Changes" : "Create Profile"}</span>
+                <span>{isEditMode ? "Save Changes" : "Add Candidate"}</span>
               </Button>
             </div>
           </form>

@@ -33,47 +33,51 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { deleteEmployee } from "@/features/employees/employeeSlice"
-import { selectEmployees } from "@/features/employees/employeeSelectors"
-import type { Employee } from "@/features/employees/employeeTypes"
+import { deleteCustomer } from "@/features/crm/crmSlice"
+import { selectAllCustomers } from "@/features/crm/crmSelectors"
+import type { Customer } from "@/features/crm/crmTypes"
 
 const ITEMS_PER_PAGE = 5
 
-export default function EmployeeList() {
+export default function CRMList() {
   const dispatch = useAppDispatch()
-  const employees = useAppSelector(selectEmployees)
+  const customers = useAppSelector(selectAllCustomers)
   const navigate = useNavigate()
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState("")
-  const [deptFilter, setDeptFilter] = useState("All")
+  const [industryFilter, setIndustryFilter] = useState("All")
   const [statusFilter, setStatusFilter] = useState("All")
   const [currentPage, setCurrentPage] = useState(1)
 
   // Delete Confirmation State
-  const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null)
 
-  // Get unique departments for filter dropdown
-  const departments = ["All", ...Array.from(new Set(employees.map((emp) => emp.department)))]
-  const statuses = ["All", "Active", "On Leave", "Resigned", "Suspended"]
+  // Get unique industries for filter dropdown
+  const industries = ["All", ...Array.from(new Set(customers.map((c) => c.industry)))]
+  const statuses = ["All", "Lead", "Contacted", "Negotiation", "Active Client", "Inactive"]
 
-  // Filtered employees
-  const filteredEmployees = employees.filter((emp) => {
+  // Filtered customers
+  const filteredCustomers = customers.filter((c) => {
     const matchesSearch =
-      emp.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.designation.toLowerCase().includes(searchTerm.toLowerCase())
+      c.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.contactPerson.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.id.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesDept = deptFilter === "All" || emp.department === deptFilter
-    const matchesStatus = statusFilter === "All" || emp.status === statusFilter
+    const matchesIndustry = industryFilter === "All" || c.industry === industryFilter
+    const matchesStatus = statusFilter === "All" || c.status === statusFilter
 
-    return matchesSearch && matchesDept && matchesStatus
+    return matchesSearch && matchesIndustry && matchesStatus
+  })
+
+  // Sort by creation date (newest first, fallback to id if missing)
+  const sortedCustomers = [...filteredCustomers].sort((a, b) => {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   })
 
   // Pagination calculation
-  const totalPages = Math.ceil(filteredEmployees.length / ITEMS_PER_PAGE)
-  const paginatedEmployees = filteredEmployees.slice(
+  const totalPages = Math.ceil(sortedCustomers.length / ITEMS_PER_PAGE)
+  const paginatedCustomers = sortedCustomers.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   )
@@ -90,8 +94,8 @@ export default function EmployeeList() {
     setCurrentPage(1)
   }
 
-  const handleDeptFilterChange = (val: string) => {
-    setDeptFilter(val)
+  const handleIndustryFilterChange = (val: string) => {
+    setIndustryFilter(val)
     setCurrentPage(1)
   }
 
@@ -102,17 +106,16 @@ export default function EmployeeList() {
 
   const handleDeleteConfirm = () => {
     if (deleteTarget) {
-      dispatch(deleteEmployee(deleteTarget.id))
+      dispatch(deleteCustomer(deleteTarget.id))
       setDeleteTarget(null)
-      // Check if page needs to go down
-      const updatedTotalPages = Math.ceil((filteredEmployees.length - 1) / ITEMS_PER_PAGE)
+      const updatedTotalPages = Math.ceil((sortedCustomers.length - 1) / ITEMS_PER_PAGE)
       if (currentPage > updatedTotalPages && currentPage > 1) {
         setCurrentPage(updatedTotalPages)
       }
     }
   }
 
-  // Helper for name avatar initials
+  // Helper for company initials
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -128,10 +131,10 @@ export default function EmployeeList() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Employee Directory
+            CRM Dashboard
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Administer employee listings, credentials, and organizational files.
+            Manage clients, track leads, and oversee active negotiations.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -144,9 +147,9 @@ export default function EmployeeList() {
             Export CSV
           </Button>
           <Button asChild size="sm" className="bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm rounded-lg text-xs">
-            <Link to="/employees/new">
+            <Link to="/crm/new">
               <Plus className="w-4 h-4 mr-1.5" />
-              Add Employee
+              Add Client
             </Link>
           </Button>
         </div>
@@ -159,7 +162,7 @@ export default function EmployeeList() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search name, email, department, ID..."
+            placeholder="Search company or contact..."
             value={searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9 bg-muted/20 border-border/80 rounded-lg text-sm"
@@ -176,24 +179,24 @@ export default function EmployeeList() {
 
         {/* Filter Dropdowns */}
         <div className="flex flex-wrap gap-2.5">
-          {/* Department Filter */}
+          {/* Industry Filter */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted-foreground font-medium hidden sm:inline">Dept:</span>
+            <span className="text-xs text-muted-foreground font-medium hidden sm:inline">Industry:</span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="border-border/80 h-9 text-xs rounded-lg flex gap-1.5 px-3 min-w-[120px]">
                   <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span>{deptFilter}</span>
+                  <span className="truncate max-w-[80px]">{industryFilter}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="glass-panel min-w-[140px] rounded-lg">
-                {departments.map((dept) => (
+              <DropdownMenuContent align="end" className="glass-panel min-w-[140px] rounded-lg max-h-[300px] overflow-y-auto">
+                {industries.map((ind) => (
                   <DropdownMenuItem
-                    key={dept}
-                    onClick={() => handleDeptFilterChange(dept)}
+                    key={ind}
+                    onClick={() => handleIndustryFilterChange(ind)}
                     className="cursor-pointer text-xs rounded-md"
                   >
-                    {dept}
+                    {ind}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -226,83 +229,71 @@ export default function EmployeeList() {
         </div>
       </div>
 
-      {/* Employees Table Container */}
+      {/* Customers Table Container */}
       <div className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-muted/40 border-b border-border/50 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                <th className="py-3 px-4">Employee ID</th>
-                <th className="py-3 px-4">Name</th>
-                <th className="py-3 px-4">Email</th>
-                <th className="py-3 px-4">Department</th>
-                <th className="py-3 px-4">Designation</th>
-                <th className="py-3 px-4">Type</th>
-                <th className="py-3 px-4">Joining Date</th>
+                <th className="py-3 px-4">Client ID</th>
+                <th className="py-3 px-4">Company</th>
+                <th className="py-3 px-4">Contact Person</th>
+                <th className="py-3 px-4">Industry</th>
+                <th className="py-3 px-4">Account Manager</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40 text-xs">
-              {paginatedEmployees.length === 0 ? (
+              {paginatedCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={7} className="py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center justify-center space-y-3">
                       <UserX className="w-8 h-8 text-muted-foreground/50 animate-bounce" />
-                      <p className="font-semibold text-sm text-foreground">No employees found</p>
+                      <p className="font-semibold text-sm text-foreground">No clients found</p>
                       <p className="text-xs max-w-xs leading-normal">
-                        Try modifying your filters or search keywords to locate record profiles.
+                        Try modifying your filters or search keywords to locate client profiles.
                       </p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                paginatedEmployees.map((emp) => (
-                  <tr key={emp.id} className="hover:bg-muted/20 transition-colors">
+                paginatedCustomers.map((c) => (
+                  <tr key={c.id} className="hover:bg-muted/20 transition-colors">
                     {/* ID */}
                     <td className="py-3 px-4 font-mono font-bold text-foreground">
-                      {emp.id}
+                      {c.id}
                     </td>
 
-                    {/* Name & Avatar */}
+                    {/* Company & Avatar */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2.5">
                         <Avatar className="h-7 w-7 border border-border/50">
                           <AvatarFallback className="bg-primary/10 text-primary font-bold text-[10px]">
-                            {getInitials(emp.fullName)}
+                            {getInitials(c.companyName)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="font-semibold text-foreground truncate max-w-[120px] sm:max-w-none">
-                          {emp.fullName}
+                        <span className="font-semibold text-foreground truncate max-w-[150px]">
+                          {c.companyName}
                         </span>
                       </div>
                     </td>
 
-                    {/* Email */}
+                    {/* Contact Person */}
                     <td className="py-3 px-4 text-muted-foreground truncate max-w-[120px]">
-                      {emp.email}
+                      {c.contactPerson}
                     </td>
 
-                    {/* Department */}
+                    {/* Industry */}
                     <td className="py-3 px-4">
                       <Badge variant="outline" className="font-medium bg-muted/30 border-border/80">
-                        {emp.department}
+                        {c.industry}
                       </Badge>
                     </td>
 
-                    {/* Designation */}
-                    <td className="py-3 px-4 text-muted-foreground truncate max-w-[100px]">
-                      {emp.designation}
-                    </td>
-
-                    {/* Type */}
+                    {/* Account Manager */}
                     <td className="py-3 px-4 text-muted-foreground">
-                      {emp.employmentType}
-                    </td>
-
-                    {/* Joining Date */}
-                    <td className="py-3 px-4 text-muted-foreground font-mono">
-                      {emp.joiningDate}
+                      {c.assignedEmployeeName}
                     </td>
 
                     {/* Status */}
@@ -310,16 +301,18 @@ export default function EmployeeList() {
                       <span className="inline-flex items-center gap-1.5">
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
-                            emp.status === "Active"
+                            c.status === "Active Client"
                               ? "bg-emerald-500"
-                              : emp.status === "On Leave"
+                              : c.status === "Lead"
+                              ? "bg-blue-500"
+                              : c.status === "Contacted"
+                              ? "bg-purple-500"
+                              : c.status === "Negotiation"
                               ? "bg-amber-500"
-                              : emp.status === "Resigned"
-                              ? "bg-rose-500"
                               : "bg-zinc-400"
                           }`}
                         />
-                        <span className="font-medium text-foreground">{emp.status}</span>
+                        <span className="font-medium text-foreground">{c.status}</span>
                       </span>
                     </td>
 
@@ -330,7 +323,7 @@ export default function EmployeeList() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 hover:bg-muted text-muted-foreground hover:text-foreground rounded-md"
-                          onClick={() => navigate(`/employees/${emp.id}`)}
+                          onClick={() => navigate(`/crm/${c.id}`)}
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -338,7 +331,7 @@ export default function EmployeeList() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 hover:bg-muted text-muted-foreground hover:text-foreground rounded-md"
-                          onClick={() => navigate(`/employees/edit/${emp.id}`)}
+                          onClick={() => navigate(`/crm/edit/${c.id}`)}
                         >
                           <Edit2 className="w-4 h-4" />
                         </Button>
@@ -346,7 +339,7 @@ export default function EmployeeList() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-md"
-                          onClick={() => setDeleteTarget(emp)}
+                          onClick={() => setDeleteTarget(c)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -360,14 +353,14 @@ export default function EmployeeList() {
         </div>
 
         {/* Table Footer / Pagination */}
-        {filteredEmployees.length > 0 && (
+        {filteredCustomers.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3.5 border-t border-border/50 bg-muted/10 text-xs">
             <span className="text-muted-foreground font-medium">
               Showing <span className="font-semibold text-foreground">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to{" "}
               <span className="font-semibold text-foreground">
-                {Math.min(currentPage * ITEMS_PER_PAGE, filteredEmployees.length)}
+                {Math.min(currentPage * ITEMS_PER_PAGE, filteredCustomers.length)}
               </span>{" "}
-              of <span className="font-semibold text-foreground">{filteredEmployees.length}</span> records
+              of <span className="font-semibold text-foreground">{filteredCustomers.length}</span> records
             </span>
 
             <div className="flex items-center gap-1.5">
@@ -402,10 +395,10 @@ export default function EmployeeList() {
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="glass-panel max-w-sm rounded-xl">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Delete Employee Record</DialogTitle>
+            <DialogTitle className="text-foreground">Delete Client Record</DialogTitle>
             <DialogDescription className="text-xs leading-normal">
               Are you sure you want to permanently delete the profile of{" "}
-              <span className="font-bold text-foreground">{deleteTarget?.fullName}</span> ({deleteTarget?.id})? This
+              <span className="font-bold text-foreground">{deleteTarget?.companyName}</span> ({deleteTarget?.id})? This
               action cannot be undone.
             </DialogDescription>
           </DialogHeader>

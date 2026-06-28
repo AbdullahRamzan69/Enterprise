@@ -8,11 +8,39 @@ import {
   Plus,
   Clock,
   CheckCircle2,
-  ListTodo
+  ListTodo,
+  UserX,
+  Umbrella,
+  XCircle,
+  UserSearch,
+  CalendarClock,
+  PauseCircle,
+  Building2,
+  Handshake,
+  MessageSquareShare,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useAppSelector } from "@/app/store"
+import { selectAttendanceCountByDateAndStatus } from "@/features/attendance/attendanceSelectors"
+import { selectEmployees } from "@/features/employees/employeeSelectors"
+import { selectLeaveCountByStatus, selectLeaveRequests } from "@/features/leave/leaveSelectors"
+import {
+  selectCandidateCountByStatus,
+  selectTotalCandidates,
+} from "@/features/recruitment/recruitmentSelectors"
+import {
+  selectActiveProjectsCount,
+  selectProjectCountByStatus,
+  selectTotalProjects,
+} from "@/features/projects/projectSelectors"
+import {
+  selectTotalCustomersCount,
+  selectActiveClientsCount,
+  selectNewLeadsCount,
+  selectNegotiationsCount,
+} from "@/features/crm/crmSelectors"
 
 // Types for activities & tasks
 interface Activity {
@@ -34,6 +62,47 @@ interface Task {
 }
 
 export default function DashboardHome() {
+  const todayDate = new Date().toISOString().split("T")[0]
+  const todayLabel = new Date().toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  })
+  const employees = useAppSelector(selectEmployees)
+  const totalEmployees = employees.length
+  const presentEmployees = useAppSelector((state) =>
+    selectAttendanceCountByDateAndStatus(state, todayDate, "Present")
+  )
+  const absentEmployees = useAppSelector((state) =>
+    selectAttendanceCountByDateAndStatus(state, todayDate, "Absent")
+  )
+  const lateEmployees = useAppSelector((state) =>
+    selectAttendanceCountByDateAndStatus(state, todayDate, "Late")
+  )
+  const leaveRequests = useAppSelector(selectLeaveRequests)
+  const totalLeaveRequests = leaveRequests.length
+  const pendingLeaveRequests = useAppSelector((state) => selectLeaveCountByStatus(state, "Pending"))
+  const approvedLeaveRequests = useAppSelector((state) => selectLeaveCountByStatus(state, "Approved"))
+  const rejectedLeaveRequests = useAppSelector((state) => selectLeaveCountByStatus(state, "Rejected"))
+  const totalCandidates = useAppSelector(selectTotalCandidates)
+  const interviewScheduledCandidates = useAppSelector((state) =>
+    selectCandidateCountByStatus(state, "Interview Scheduled")
+  )
+  const selectedCandidates = useAppSelector((state) => selectCandidateCountByStatus(state, "Selected"))
+  const rejectedCandidates = useAppSelector((state) => selectCandidateCountByStatus(state, "Rejected"))
+  const totalProjects = useAppSelector(selectTotalProjects)
+  const activeProjects = useAppSelector(selectActiveProjectsCount)
+  const completedProjects = useAppSelector((state) => selectProjectCountByStatus(state, "Completed"))
+  const projectsOnHold = useAppSelector((state) => selectProjectCountByStatus(state, "On Hold"))
+  const presentPercentage = totalEmployees > 0 ? (presentEmployees / totalEmployees) * 100 : 0
+  const formattedPresentPercentage = presentPercentage.toFixed(1)
+
+  // CRM Stats
+  const totalClients = useAppSelector(selectTotalCustomersCount)
+  const activeClients = useAppSelector(selectActiveClientsCount)
+  const newLeads = useAppSelector(selectNewLeadsCount)
+  const negotiations = useAppSelector(selectNegotiationsCount)
+
   const [tasks, setTasks] = useState<Task[]>([
     { id: "1", title: "Approve pending leave requests", dueDate: "Today, 5:00 PM", priority: "high", status: "pending" },
     { id: "2", title: "Conduct interview with Senior React Developer", dueDate: "Today, 3:00 PM", priority: "high", status: "pending" },
@@ -72,7 +141,7 @@ export default function DashboardHome() {
             Workspace Hub
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Operational synopsis for today, June 21, 2026.
+            Operational synopsis for today, {todayLabel}.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -96,7 +165,7 @@ export default function DashboardHome() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">154</div>
+            <div className="text-2xl font-bold">{totalEmployees}</div>
             <div className="flex items-center gap-1.5 mt-1 text-[11px]">
               <span className="flex items-center font-medium text-emerald-500 bg-emerald-500/10 px-1 rounded">
                 <TrendingUp className="w-3 h-3 mr-0.5" />
@@ -118,56 +187,347 @@ export default function DashboardHome() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">142<span className="text-xs font-normal text-muted-foreground">/154</span></div>
+            <div className="text-2xl font-bold">{presentEmployees}<span className="text-xs font-normal text-muted-foreground">/{totalEmployees}</span></div>
             <div className="flex items-center gap-1.5 mt-1 text-[11px]">
-              <span className="font-semibold text-emerald-500">92.2%</span>
+              <span className="font-semibold text-emerald-500">{formattedPresentPercentage}%</span>
               <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full" style={{ width: "92.2%" }} />
+                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${formattedPresentPercentage}%` }} />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Active Projects */}
+        {/* Absent Today */}
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Absent Today
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-rose-500/10 text-rose-500">
+              <UserX className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{absentEmployees}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-rose-500">
+                {totalEmployees > 0 ? ((absentEmployees / totalEmployees) * 100).toFixed(1) : "0.0"}%
+              </span>
+              <span className="text-muted-foreground">of workforce</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Late Today */}
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Late Today
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+              <Clock className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{lateEmployees}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="flex items-center font-medium text-amber-500 bg-amber-500/10 px-1 rounded">
+                <Clock className="w-3 h-3 mr-0.5" />
+                active logs
+              </span>
+              <span className="text-muted-foreground">today</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Leave Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Total Leave Requests
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+              <Umbrella className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalLeaveRequests}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-blue-500">{leaveRequests.reduce((total, request) => total + request.days, 0)}</span>
+              <span className="text-muted-foreground">total days requested</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Pending Requests
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+              <Clock className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pendingLeaveRequests}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-amber-500">awaiting review</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Approved Requests
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{approvedLeaveRequests}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-emerald-500">approved</span>
+              <span className="text-muted-foreground">applications</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Rejected Requests
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-rose-500/10 text-rose-500">
+              <XCircle className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{rejectedLeaveRequests}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-rose-500">declined</span>
+              <span className="text-muted-foreground">applications</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recruitment Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Total Candidates
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+              <UserSearch className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalCandidates}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-blue-500">active pipeline</span>
+              <span className="text-muted-foreground">applicants</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Interview Scheduled
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
+              <CalendarClock className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{interviewScheduledCandidates}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-purple-500">upcoming</span>
+              <span className="text-muted-foreground">interviews</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Selected
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{selectedCandidates}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-emerald-500">ready to hire</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Rejected
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-rose-500/10 text-rose-500">
+              <XCircle className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{rejectedCandidates}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-rose-500">declined</span>
+              <span className="text-muted-foreground">applications</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Project Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Total Projects
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+              <FolderKanban className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalProjects}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-blue-500">registered</span>
+              <span className="text-muted-foreground">initiatives</span>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Active Projects
             </CardTitle>
-            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
-              <FolderKanban className="w-4 h-4" />
+            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+              <TrendingUp className="w-4 h-4" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">18</div>
+            <div className="text-2xl font-bold">{activeProjects}</div>
             <div className="flex items-center gap-1.5 mt-1 text-[11px]">
-              <span className="flex items-center font-medium text-amber-500 bg-amber-500/10 px-1 rounded">
-                <Clock className="w-3 h-3 mr-0.5" />
-                2 ending soon
-              </span>
-              <span className="text-muted-foreground">in 7 days</span>
+              <span className="font-semibold text-emerald-500">in progress</span>
             </div>
           </CardContent>
         </Card>
 
-        {/* Monthly Revenue */}
         <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Monthly Revenue
+              Completed Projects
             </CardTitle>
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
-              <DollarSign className="w-4 h-4" />
+            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
+              <CheckCircle2 className="w-4 h-4" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$145,200</div>
+            <div className="text-2xl font-bold">{completedProjects}</div>
             <div className="flex items-center gap-1.5 mt-1 text-[11px]">
-              <span className="flex items-center font-medium text-emerald-500 bg-emerald-500/10 px-1 rounded">
-                <TrendingUp className="w-3 h-3 mr-0.5" />
-                +12.4%
-              </span>
-              <span className="text-muted-foreground">vs target</span>
+              <span className="font-semibold text-purple-500">delivered</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Projects On Hold
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+              <PauseCircle className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{projectsOnHold}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-amber-500">paused</span>
+              <span className="text-muted-foreground">initiatives</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* CRM Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Total Clients
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+              <Building2 className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalClients}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-blue-500">CRM database</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Active Clients
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{activeClients}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-emerald-500">paying customers</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              New Leads
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
+              <MessageSquareShare className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{newLeads}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-purple-500">prospects</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Negotiations
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+              <Handshake className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{negotiations}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-amber-500">in discussion</span>
             </div>
           </CardContent>
         </Card>

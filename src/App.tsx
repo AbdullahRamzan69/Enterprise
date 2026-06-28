@@ -4,6 +4,24 @@ import DashboardLayout from "@/layouts/DashboardLayout"
 import Login from "@/pages/Login"
 import DashboardHome from "@/pages/DashboardHome"
 import PlaceholderPage from "@/pages/PlaceholderPage"
+import AttendanceDetails from "@/pages/attendance/AttendanceDetails"
+import AttendanceForm from "@/pages/attendance/AttendanceForm"
+import AttendanceList from "@/pages/attendance/AttendanceList"
+import EmployeeDetails from "@/pages/employees/EmployeeDetails"
+import EmployeeForm from "@/pages/employees/EmployeeForm"
+import EmployeeList from "@/pages/employees/EmployeeList"
+import LeaveDetails from "@/pages/leave/LeaveDetails"
+import LeaveForm from "@/pages/leave/LeaveForm"
+import LeaveList from "@/pages/leave/LeaveList"
+import ProjectDetails from "@/pages/projects/ProjectDetails"
+import ProjectForm from "@/pages/projects/ProjectForm"
+import ProjectsList from "@/pages/projects/ProjectsList"
+import RecruitmentDetails from "@/pages/recruitment/RecruitmentDetails"
+import RecruitmentForm from "@/pages/recruitment/RecruitmentForm"
+import RecruitmentList from "@/pages/recruitment/RecruitmentList"
+import CRMList from "@/pages/crm/CRMList"
+import CRMForm from "@/pages/crm/CRMForm"
+import CRMDetails from "@/pages/crm/CRMDetails"
 
 export default function App() {
   return (
@@ -22,60 +40,30 @@ export default function App() {
             <Route path="dashboard" element={<DashboardHome />} />
 
             {/* Sidebar Module Views */}
-            <Route
-              path="employees"
-              element={
-                <PlaceholderPage
-                  title="Employees"
-                  description="Administrative directory, personnel rosters, and contract listings."
-                />
-              }
-            />
-            <Route
-              path="attendance"
-              element={
-                <PlaceholderPage
-                  title="Attendance"
-                  description="Daily clock-in registers, timesheets, and biometric sensor logs."
-                />
-              }
-            />
-            <Route
-              path="leave"
-              element={
-                <PlaceholderPage
-                  title="Leave"
-                  description="Paid time off (PTO) balances, holiday records, and sick leaves."
-                />
-              }
-            />
-            <Route
-              path="recruitment"
-              element={
-                <PlaceholderPage
-                  title="Recruitment"
-                  description="Job postings pipeline, candidate profiles, resumes, and interview feedback."
-                />
-              }
-            />
-            <Route
-              path="crm"
-              element={
-                <PlaceholderPage
-                  title="CRM"
-                  description="Sales prospects pipeline, customer directories, and key account deals."
-                />
-              }
-            />
-            <Route
-              path="projects"
-              element={
-                <PlaceholderPage
-                  title="Projects"
-                  description="Sprint milestones, Kanban task boards, and overall project status tracking."
-                />
-              }
-            />
+            <Route path="employees" element={<EmployeeList />} />
+            <Route path="employees/new" element={<EmployeeForm />} />
+            <Route path="employees/edit/:id" element={<EmployeeForm />} />
+            <Route path="employees/:id" element={<EmployeeDetails />} />
+            <Route path="attendance" element={<AttendanceList />} />
+            <Route path="attendance/new" element={<AttendanceForm />} />
+            <Route path="attendance/edit/:id" element={<AttendanceForm />} />
+            <Route path="attendance/:id" element={<AttendanceDetails />} />
+            <Route path="leave" element={<LeaveList />} />
+            <Route path="leave/new" element={<LeaveForm />} />
+            <Route path="leave/edit/:id" element={<LeaveForm />} />
+            <Route path="leave/:id" element={<LeaveDetails />} />
+            <Route path="recruitment" element={<RecruitmentList />} />
+            <Route path="recruitment/new" element={<RecruitmentForm />} />
+            <Route path="recruitment/edit/:id" element={<RecruitmentForm />} />
+            <Route path="recruitment/:id" element={<RecruitmentDetails />} />
+            <Route path="projects" element={<ProjectsList />} />
+            <Route path="projects/new" element={<ProjectForm />} />
+            <Route path="projects/edit/:id" element={<ProjectForm />} />
+            <Route path="projects/:id" element={<ProjectDetails />} />
+            <Route path="crm" element={<CRMList />} />
+            <Route path="crm/new" element={<CRMForm />} />
+            <Route path="crm/edit/:id" element={<CRMForm />} />
+            <Route path="crm/:id" element={<CRMDetails />} />
             <Route
               path="finance"
               element={

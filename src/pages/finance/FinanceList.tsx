@@ -10,9 +10,9 @@ import {
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
-  UserX,
+  FileSpreadsheet,
+  Banknote,
   X,
-  FileSpreadsheet
 } from "lucide-react"
 import { useAppDispatch, useAppSelector } from "@/app/store"
 import { Input } from "@/components/ui/input"
@@ -33,47 +33,60 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { deleteEmployee } from "@/features/employees/employeeSlice"
-import { selectEmployees } from "@/features/employees/employeeSelectors"
-import type { Employee } from "@/features/employees/employeeTypes"
+import { deletePayroll } from "@/features/finance/financeSlice"
+import { selectAllPayrolls } from "@/features/finance/financeSelectors"
+import type { PayrollRecord } from "@/features/finance/financeTypes"
 
 const ITEMS_PER_PAGE = 5
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+]
+const YEARS = [2023, 2024, 2025, 2026, 2027]
 
-export default function EmployeeList() {
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount)
+
+export default function FinanceList() {
   const dispatch = useAppDispatch()
-  const employees = useAppSelector(selectEmployees)
+  const payrolls = useAppSelector(selectAllPayrolls)
   const navigate = useNavigate()
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState("")
-  const [deptFilter, setDeptFilter] = useState("All")
+  const [monthFilter, setMonthFilter] = useState("All")
+  const [yearFilter, setYearFilter] = useState("All")
   const [statusFilter, setStatusFilter] = useState("All")
   const [currentPage, setCurrentPage] = useState(1)
 
   // Delete Confirmation State
-  const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<PayrollRecord | null>(null)
 
-  // Get unique departments for filter dropdown
-  const departments = ["All", ...Array.from(new Set(employees.map((emp) => emp.department)))]
-  const statuses = ["All", "Active", "On Leave", "Resigned", "Suspended"]
-
-  // Filtered employees
-  const filteredEmployees = employees.filter((emp) => {
+  // Filtered payrolls
+  const filteredPayrolls = payrolls.filter((p) => {
     const matchesSearch =
-      emp.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.designation.toLowerCase().includes(searchTerm.toLowerCase())
+      p.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.employeeId.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesDept = deptFilter === "All" || emp.department === deptFilter
-    const matchesStatus = statusFilter === "All" || emp.status === statusFilter
+    const matchesMonth = monthFilter === "All" || p.month === monthFilter
+    const matchesYear = yearFilter === "All" || p.year.toString() === yearFilter
+    const matchesStatus = statusFilter === "All" || p.paymentStatus === statusFilter
 
-    return matchesSearch && matchesDept && matchesStatus
+    return matchesSearch && matchesMonth && matchesYear && matchesStatus
+  })
+
+  // Sort by Year desc, then Month (basic sort)
+  const sortedPayrolls = [...filteredPayrolls].sort((a, b) => {
+    if (a.year !== b.year) return b.year - a.year
+    return MONTHS.indexOf(b.month) - MONTHS.indexOf(a.month)
   })
 
   // Pagination calculation
-  const totalPages = Math.ceil(filteredEmployees.length / ITEMS_PER_PAGE)
-  const paginatedEmployees = filteredEmployees.slice(
+  const totalPages = Math.ceil(sortedPayrolls.length / ITEMS_PER_PAGE)
+  const paginatedPayrolls = sortedPayrolls.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   )
@@ -84,35 +97,22 @@ export default function EmployeeList() {
     }
   }
 
-  // Reset page on filter changes
   const handleSearchChange = (val: string) => {
     setSearchTerm(val)
     setCurrentPage(1)
   }
 
-  const handleDeptFilterChange = (val: string) => {
-    setDeptFilter(val)
-    setCurrentPage(1)
-  }
-
-  const handleStatusFilterChange = (val: string) => {
-    setStatusFilter(val)
-    setCurrentPage(1)
-  }
-
   const handleDeleteConfirm = () => {
     if (deleteTarget) {
-      dispatch(deleteEmployee(deleteTarget.id))
+      dispatch(deletePayroll(deleteTarget.id))
       setDeleteTarget(null)
-      // Check if page needs to go down
-      const updatedTotalPages = Math.ceil((filteredEmployees.length - 1) / ITEMS_PER_PAGE)
+      const updatedTotalPages = Math.ceil((sortedPayrolls.length - 1) / ITEMS_PER_PAGE)
       if (currentPage > updatedTotalPages && currentPage > 1) {
         setCurrentPage(updatedTotalPages)
       }
     }
   }
 
-  // Helper for name avatar initials
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -128,25 +128,27 @@ export default function EmployeeList() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Employee Directory
+            Payroll Ledger
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Administer employee listings, credentials, and organizational files.
+            Manage employee compensations, track salary dispersals, and review payment histories.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
+            asChild
             className="border-border/60 hover:bg-muted text-foreground text-xs rounded-lg shrink-0"
-            onClick={() => alert("CSV Export mock triggered. Spreadsheet file downloaded successfully.")}
           >
-            <FileSpreadsheet className="w-4 h-4 mr-1.5" />
-            Export CSV
+            <Link to="/finance/reports">
+              <FileSpreadsheet className="w-4 h-4 mr-1.5" />
+              Reports
+            </Link>
           </Button>
           <Button asChild size="sm" className="bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm rounded-lg text-xs">
-            <Link to="/employees/new">
+            <Link to="/finance/new">
               <Plus className="w-4 h-4 mr-1.5" />
-              Add Employee
+              Add Payroll
             </Link>
           </Button>
         </div>
@@ -159,7 +161,7 @@ export default function EmployeeList() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search name, email, department, ID..."
+            placeholder="Search employee name or ID..."
             value={searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9 bg-muted/20 border-border/80 rounded-lg text-sm"
@@ -176,24 +178,50 @@ export default function EmployeeList() {
 
         {/* Filter Dropdowns */}
         <div className="flex flex-wrap gap-2.5">
-          {/* Department Filter */}
+          {/* Month Filter */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted-foreground font-medium hidden sm:inline">Dept:</span>
+            <span className="text-xs text-muted-foreground font-medium hidden sm:inline">Month:</span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="border-border/80 h-9 text-xs rounded-lg flex gap-1.5 px-3 min-w-[120px]">
                   <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span>{deptFilter}</span>
+                  <span className="truncate max-w-[80px]">{monthFilter}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="glass-panel min-w-[140px] rounded-lg">
-                {departments.map((dept) => (
+              <DropdownMenuContent align="end" className="glass-panel min-w-[140px] rounded-lg max-h-[300px] overflow-y-auto">
+                <DropdownMenuItem onClick={() => { setMonthFilter("All"); setCurrentPage(1) }} className="cursor-pointer text-xs rounded-md">All</DropdownMenuItem>
+                {MONTHS.map((m) => (
                   <DropdownMenuItem
-                    key={dept}
-                    onClick={() => handleDeptFilterChange(dept)}
+                    key={m}
+                    onClick={() => { setMonthFilter(m); setCurrentPage(1) }}
                     className="cursor-pointer text-xs rounded-md"
                   >
-                    {dept}
+                    {m}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Year Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium hidden sm:inline">Year:</span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="border-border/80 h-9 text-xs rounded-lg flex gap-1.5 px-3 min-w-[100px]">
+                  <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span>{yearFilter}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="glass-panel min-w-[120px] rounded-lg">
+                <DropdownMenuItem onClick={() => { setYearFilter("All"); setCurrentPage(1) }} className="cursor-pointer text-xs rounded-md">All</DropdownMenuItem>
+                {YEARS.map((y) => (
+                  <DropdownMenuItem
+                    key={y}
+                    onClick={() => { setYearFilter(y.toString()); setCurrentPage(1) }}
+                    className="cursor-pointer text-xs rounded-md"
+                  >
+                    {y}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -205,104 +233,89 @@ export default function EmployeeList() {
             <span className="text-xs text-muted-foreground font-medium hidden sm:inline">Status:</span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="border-border/80 h-9 text-xs rounded-lg flex gap-1.5 px-3 min-w-[120px]">
+                <Button variant="outline" className="border-border/80 h-9 text-xs rounded-lg flex gap-1.5 px-3 min-w-[110px]">
                   <SlidersHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
                   <span>{statusFilter}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="glass-panel min-w-[140px] rounded-lg">
-                {statuses.map((stat) => (
-                  <DropdownMenuItem
-                    key={stat}
-                    onClick={() => handleStatusFilterChange(stat)}
-                    className="cursor-pointer text-xs rounded-md"
-                  >
-                    {stat}
-                  </DropdownMenuItem>
-                ))}
+              <DropdownMenuContent align="end" className="glass-panel min-w-[120px] rounded-lg">
+                <DropdownMenuItem onClick={() => { setStatusFilter("All"); setCurrentPage(1) }} className="cursor-pointer text-xs rounded-md">All</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setStatusFilter("Pending"); setCurrentPage(1) }} className="cursor-pointer text-xs rounded-md">Pending</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setStatusFilter("Paid"); setCurrentPage(1) }} className="cursor-pointer text-xs rounded-md">Paid</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
       </div>
 
-      {/* Employees Table Container */}
+      {/* Payrolls Table Container */}
       <div className="bg-card border border-border/60 rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-muted/40 border-b border-border/50 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                <th className="py-3 px-4">Employee ID</th>
-                <th className="py-3 px-4">Name</th>
-                <th className="py-3 px-4">Email</th>
-                <th className="py-3 px-4">Department</th>
-                <th className="py-3 px-4">Designation</th>
-                <th className="py-3 px-4">Type</th>
-                <th className="py-3 px-4">Joining Date</th>
+                <th className="py-3 px-4">Pay ID</th>
+                <th className="py-3 px-4">Employee</th>
+                <th className="py-3 px-4">Period</th>
+                <th className="py-3 px-4 text-right">Basic Salary</th>
+                <th className="py-3 px-4 text-right">Net Salary</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40 text-xs">
-              {paginatedEmployees.length === 0 ? (
+              {paginatedPayrolls.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={7} className="py-12 text-center text-muted-foreground">
                     <div className="flex flex-col items-center justify-center space-y-3">
-                      <UserX className="w-8 h-8 text-muted-foreground/50 animate-bounce" />
-                      <p className="font-semibold text-sm text-foreground">No employees found</p>
+                      <Banknote className="w-8 h-8 text-muted-foreground/50 animate-bounce" />
+                      <p className="font-semibold text-sm text-foreground">No payroll records found</p>
                       <p className="text-xs max-w-xs leading-normal">
-                        Try modifying your filters or search keywords to locate record profiles.
+                        Try modifying your filters or search keywords to locate salary records.
                       </p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                paginatedEmployees.map((emp) => (
-                  <tr key={emp.id} className="hover:bg-muted/20 transition-colors">
+                paginatedPayrolls.map((p) => (
+                  <tr key={p.id} className="hover:bg-muted/20 transition-colors">
                     {/* ID */}
                     <td className="py-3 px-4 font-mono font-bold text-foreground">
-                      {emp.id}
+                      {p.id}
                     </td>
 
-                    {/* Name & Avatar */}
+                    {/* Employee & Avatar */}
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2.5">
                         <Avatar className="h-7 w-7 border border-border/50">
                           <AvatarFallback className="bg-primary/10 text-primary font-bold text-[10px]">
-                            {getInitials(emp.fullName)}
+                            {getInitials(p.employeeName)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="font-semibold text-foreground truncate max-w-[120px] sm:max-w-none">
-                          {emp.fullName}
-                        </span>
+                        <div>
+                          <p className="font-semibold text-foreground truncate max-w-[150px]">
+                            {p.employeeName}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground font-mono">{p.employeeId}</p>
+                        </div>
                       </div>
                     </td>
 
-                    {/* Email */}
-                    <td className="py-3 px-4 text-muted-foreground truncate max-w-[120px]">
-                      {emp.email}
-                    </td>
-
-                    {/* Department */}
+                    {/* Period */}
                     <td className="py-3 px-4">
                       <Badge variant="outline" className="font-medium bg-muted/30 border-border/80">
-                        {emp.department}
+                        {p.month} {p.year}
                       </Badge>
                     </td>
 
-                    {/* Designation */}
-                    <td className="py-3 px-4 text-muted-foreground truncate max-w-[100px]">
-                      {emp.designation}
+                    {/* Basic Salary */}
+                    <td className="py-3 px-4 text-right font-mono text-muted-foreground">
+                      {formatCurrency(p.basicSalary)}
                     </td>
 
-                    {/* Type */}
-                    <td className="py-3 px-4 text-muted-foreground">
-                      {emp.employmentType}
-                    </td>
-
-                    {/* Joining Date */}
-                    <td className="py-3 px-4 text-muted-foreground font-mono">
-                      {emp.joiningDate}
+                    {/* Net Salary */}
+                    <td className="py-3 px-4 text-right font-mono font-bold text-emerald-500 dark:text-emerald-400">
+                      {formatCurrency(p.netSalary)}
                     </td>
 
                     {/* Status */}
@@ -310,16 +323,12 @@ export default function EmployeeList() {
                       <span className="inline-flex items-center gap-1.5">
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
-                            emp.status === "Active"
+                            p.paymentStatus === "Paid"
                               ? "bg-emerald-500"
-                              : emp.status === "On Leave"
-                              ? "bg-amber-500"
-                              : emp.status === "Resigned"
-                              ? "bg-rose-500"
-                              : "bg-zinc-400"
+                              : "bg-amber-500"
                           }`}
                         />
-                        <span className="font-medium text-foreground">{emp.status}</span>
+                        <span className="font-medium text-foreground">{p.paymentStatus}</span>
                       </span>
                     </td>
 
@@ -330,7 +339,7 @@ export default function EmployeeList() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 hover:bg-muted text-muted-foreground hover:text-foreground rounded-md"
-                          onClick={() => navigate(`/employees/${emp.id}`)}
+                          onClick={() => navigate(`/finance/${p.id}`)}
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -338,7 +347,7 @@ export default function EmployeeList() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 hover:bg-muted text-muted-foreground hover:text-foreground rounded-md"
-                          onClick={() => navigate(`/employees/edit/${emp.id}`)}
+                          onClick={() => navigate(`/finance/edit/${p.id}`)}
                         >
                           <Edit2 className="w-4 h-4" />
                         </Button>
@@ -346,7 +355,7 @@ export default function EmployeeList() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 hover:bg-destructive/10 text-muted-foreground hover:text-destructive rounded-md"
-                          onClick={() => setDeleteTarget(emp)}
+                          onClick={() => setDeleteTarget(p)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -360,14 +369,14 @@ export default function EmployeeList() {
         </div>
 
         {/* Table Footer / Pagination */}
-        {filteredEmployees.length > 0 && (
+        {filteredPayrolls.length > 0 && (
           <div className="flex items-center justify-between px-4 py-3.5 border-t border-border/50 bg-muted/10 text-xs">
             <span className="text-muted-foreground font-medium">
               Showing <span className="font-semibold text-foreground">{(currentPage - 1) * ITEMS_PER_PAGE + 1}</span> to{" "}
               <span className="font-semibold text-foreground">
-                {Math.min(currentPage * ITEMS_PER_PAGE, filteredEmployees.length)}
+                {Math.min(currentPage * ITEMS_PER_PAGE, filteredPayrolls.length)}
               </span>{" "}
-              of <span className="font-semibold text-foreground">{filteredEmployees.length}</span> records
+              of <span className="font-semibold text-foreground">{filteredPayrolls.length}</span> records
             </span>
 
             <div className="flex items-center gap-1.5">
@@ -402,10 +411,10 @@ export default function EmployeeList() {
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="glass-panel max-w-sm rounded-xl">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Delete Employee Record</DialogTitle>
+            <DialogTitle className="text-foreground">Delete Payroll Record</DialogTitle>
             <DialogDescription className="text-xs leading-normal">
-              Are you sure you want to permanently delete the profile of{" "}
-              <span className="font-bold text-foreground">{deleteTarget?.fullName}</span> ({deleteTarget?.id})? This
+              Are you sure you want to permanently delete the payroll record for{" "}
+              <span className="font-bold text-foreground">{deleteTarget?.employeeName}</span> ({deleteTarget?.month} {deleteTarget?.year})? This
               action cannot be undone.
             </DialogDescription>
           </DialogHeader>
