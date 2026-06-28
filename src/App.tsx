@@ -23,6 +23,10 @@ import CRMList from "@/pages/crm/CRMList"
 import CRMForm from "@/pages/crm/CRMForm"
 import CRMDetails from "@/pages/crm/CRMDetails"
 
+import FinanceList from "@/pages/finance/FinanceList"
+import FinanceForm from "@/pages/finance/FinanceForm"
+import FinanceDetail from "@/pages/finance/FinanceDetail"
+
 export default function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="aethel-ebms-theme">
@@ -64,15 +68,12 @@ export default function App() {
             <Route path="crm/new" element={<CRMForm />} />
             <Route path="crm/edit/:id" element={<CRMForm />} />
             <Route path="crm/:id" element={<CRMDetails />} />
-            <Route
-              path="finance"
-              element={
-                <PlaceholderPage
-                  title="Finance"
-                  description="Operational expenditures, monthly payroll registries, and budget sheets."
-                />
-              }
-            />
+
+            <Route path="finance" element={<FinanceList />} />
+            <Route path="finance/new" element={<FinanceForm />} />
+            <Route path="finance/edit/:id" element={<FinanceForm />} />
+            <Route path="finance/:id" element={<FinanceDetail />} />
+
             <Route
               path="assets"
               element={
