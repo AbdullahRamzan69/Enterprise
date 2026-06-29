@@ -1,9 +1,9 @@
 import { useState } from "react"
-import { Users, Plus, Edit2, Trash2, AlertCircle } from "lucide-react"
+import { Users, Plus, Edit2, Trash2 } from "lucide-react"
 import { useAppDispatch, useAppSelector } from "@/app/store"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { selectDepartments, selectEmployees } from "@/features/settings/settingsSelectors"
+import { selectDepartments } from "@/features/settings/settingsSelectors"
 import { selectEmployees as selectEmployeesFromEmployees } from "@/features/employees/employeeSelectors"
 import { addDepartment, updateDepartment, deleteDepartment } from "@/features/settings/settingsSlice"
 import type { Department } from "@/features/settings/settingsTypes"
