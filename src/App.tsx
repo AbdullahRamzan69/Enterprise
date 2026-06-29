@@ -39,6 +39,10 @@ import PayrollSettings from "@/pages/settings/PayrollSettings"
 import AssetCategories from "@/pages/settings/AssetCategories"
 import SystemPreferences from "@/pages/settings/SystemPreferences"
 
+import FinanceList from "@/pages/finance/FinanceList"
+import FinanceForm from "@/pages/finance/FinanceForm"
+import FinanceDetail from "@/pages/finance/FinanceDetail"
+
 export default function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="aethel-ebms-theme">
@@ -80,6 +84,7 @@ export default function App() {
             <Route path="crm/new" element={<CRMForm />} />
             <Route path="crm/edit/:id" element={<CRMForm />} />
             <Route path="crm/:id" element={<CRMDetails />} />
+
             <Route path="finance" element={<FinanceList />} />
             <Route path="finance/new" element={<PayrollForm />} />
             <Route path="finance/edit/:id" element={<PayrollForm />} />
@@ -100,6 +105,32 @@ export default function App() {
               <Route path="assets" element={<AssetCategories />} />
               <Route path="preferences" element={<SystemPreferences />} />
             </Route>
+=======
+
+            <Route path="finance" element={<FinanceList />} />
+            <Route path="finance/new" element={<FinanceForm />} />
+            <Route path="finance/edit/:id" element={<FinanceForm />} />
+            <Route path="finance/:id" element={<FinanceDetail />} />
+
+            <Route
+              path="assets"
+              element={
+                <PlaceholderPage
+                  title="Assets"
+                  description="Cataloging enterprise hardware assets, software licenses, and inventory."
+                />
+              }
+            />
+            <Route
+              path="settings"
+              element={
+                <PlaceholderPage
+                  title="Settings"
+                  description="General parameters, user roles permissions, and API integrations."
+                />
+              }
+            />
+>>>>>>> b00ff813376abe144d282fc0423dc2b8ad2bf4b6
           </Route>
 
           {/* Catch-all Fallback */}
