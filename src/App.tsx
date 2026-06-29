@@ -22,6 +22,22 @@ import RecruitmentList from "@/pages/recruitment/RecruitmentList"
 import CRMList from "@/pages/crm/CRMList"
 import CRMForm from "@/pages/crm/CRMForm"
 import CRMDetails from "@/pages/crm/CRMDetails"
+import FinanceList from "@/pages/finance/FinanceList"
+import PayrollForm from "@/pages/finance/PayrollForm"
+import PayrollDetails from "@/pages/finance/PayrollDetails"
+import AssetsList from "@/pages/assets/AssetsList"
+import AssetForm from "@/pages/assets/AssetForm"
+import AssetDetails from "@/pages/assets/AssetDetails"
+import AssetsReports from "@/pages/assets/AssetsReports"
+import Settings from "@/pages/settings/Settings"
+import CompanyProfile from "@/pages/settings/CompanyProfile"
+import Departments from "@/pages/settings/Departments"
+import Designations from "@/pages/settings/Designations"
+import Holidays from "@/pages/settings/Holidays"
+import LeavePolicies from "@/pages/settings/LeavePolicies"
+import PayrollSettings from "@/pages/settings/PayrollSettings"
+import AssetCategories from "@/pages/settings/AssetCategories"
+import SystemPreferences from "@/pages/settings/SystemPreferences"
 
 export default function App() {
   return (
@@ -64,33 +80,26 @@ export default function App() {
             <Route path="crm/new" element={<CRMForm />} />
             <Route path="crm/edit/:id" element={<CRMForm />} />
             <Route path="crm/:id" element={<CRMDetails />} />
-            <Route
-              path="finance"
-              element={
-                <PlaceholderPage
-                  title="Finance"
-                  description="Operational expenditures, monthly payroll registries, and budget sheets."
-                />
-              }
-            />
-            <Route
-              path="assets"
-              element={
-                <PlaceholderPage
-                  title="Assets"
-                  description="Cataloging enterprise hardware assets, software licenses, and inventory."
-                />
-              }
-            />
-            <Route
-              path="settings"
-              element={
-                <PlaceholderPage
-                  title="Settings"
-                  description="General parameters, user roles permissions, and API integrations."
-                />
-              }
-            />
+            <Route path="finance" element={<FinanceList />} />
+            <Route path="finance/new" element={<PayrollForm />} />
+            <Route path="finance/edit/:id" element={<PayrollForm />} />
+            <Route path="finance/:id" element={<PayrollDetails />} />
+            <Route path="assets" element={<AssetsList />} />
+            <Route path="assets/new" element={<AssetForm />} />
+            <Route path="assets/edit/:id" element={<AssetForm />} />
+            <Route path="assets/:id" element={<AssetDetails />} />
+            <Route path="assets/reports" element={<AssetsReports />} />
+            <Route path="settings" element={<Settings />}>
+              <Route index element={<CompanyProfile />} />
+              <Route path="company" element={<CompanyProfile />} />
+              <Route path="departments" element={<Departments />} />
+              <Route path="designations" element={<Designations />} />
+              <Route path="holidays" element={<Holidays />} />
+              <Route path="leave-policies" element={<LeavePolicies />} />
+              <Route path="payroll" element={<PayrollSettings />} />
+              <Route path="assets" element={<AssetCategories />} />
+              <Route path="preferences" element={<SystemPreferences />} />
+            </Route>
           </Route>
 
           {/* Catch-all Fallback */}

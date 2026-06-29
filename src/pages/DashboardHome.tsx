@@ -18,6 +18,7 @@ import {
   Building2,
   Handshake,
   MessageSquareShare,
+  Package,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -41,6 +42,18 @@ import {
   selectNewLeadsCount,
   selectNegotiationsCount,
 } from "@/features/crm/crmSelectors"
+import {
+  selectTotalAssetsCount,
+  selectAssignedAssetsCount,
+  selectAvailableAssetsCount,
+  selectMaintenanceAssetsCount,
+} from "@/features/assets/assetSelectors"
+import {
+  selectTotalDepartmentsCount,
+  selectTotalDesignationsCount,
+  selectUpcomingHolidays,
+  selectCompanyProfile,
+} from "@/features/settings/settingsSelectors"
 
 // Types for activities & tasks
 interface Activity {
@@ -102,6 +115,18 @@ export default function DashboardHome() {
   const activeClients = useAppSelector(selectActiveClientsCount)
   const newLeads = useAppSelector(selectNewLeadsCount)
   const negotiations = useAppSelector(selectNegotiationsCount)
+
+  // Assets Stats
+  const totalAssets = useAppSelector(selectTotalAssetsCount)
+  const assignedAssets = useAppSelector(selectAssignedAssetsCount)
+  const availableAssets = useAppSelector(selectAvailableAssetsCount)
+  const maintenanceAssets = useAppSelector(selectMaintenanceAssetsCount)
+
+  // Settings Stats
+  const totalDepartments = useAppSelector(selectTotalDepartmentsCount)
+  const totalDesignations = useAppSelector(selectTotalDesignationsCount)
+  const upcomingHolidays = useAppSelector(selectUpcomingHolidays)
+  const companyProfile = useAppSelector(selectCompanyProfile)
 
   const [tasks, setTasks] = useState<Task[]>([
     { id: "1", title: "Approve pending leave requests", dueDate: "Today, 5:00 PM", priority: "high", status: "pending" },
@@ -528,6 +553,81 @@ export default function DashboardHome() {
             <div className="text-2xl font-bold">{negotiations}</div>
             <div className="flex items-center gap-1.5 mt-1 text-[11px]">
               <span className="font-semibold text-amber-500">in discussion</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Assets Statistics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Total Assets
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+              <Package className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalAssets}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-blue-500">inventory</span>
+              <span className="text-muted-foreground">items</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Assigned Assets
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{assignedAssets}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-purple-500">in use</span>
+              <span className="text-muted-foreground">by employees</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Available Assets
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{availableAssets}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-emerald-500">ready for</span>
+              <span className="text-muted-foreground">assignment</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-card hover:translate-y-[-2px] transition-transform duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Under Maintenance
+            </CardTitle>
+            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+              <PauseCircle className="w-4 h-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{maintenanceAssets}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-[11px]">
+              <span className="font-semibold text-amber-500">requiring</span>
+              <span className="text-muted-foreground">service</span>
             </div>
           </CardContent>
         </Card>

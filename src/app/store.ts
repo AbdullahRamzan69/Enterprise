@@ -7,6 +7,8 @@ import projectReducer, { PROJECTS_STORAGE_KEY } from "@/features/projects/projec
 import recruitmentReducer, { RECRUITMENT_STORAGE_KEY } from "@/features/recruitment/recruitmentSlice"
 import crmReducer, { CRM_STORAGE_KEY } from "@/features/crm/crmSlice"
 import financeReducer, { FINANCE_STORAGE_KEY } from "@/features/finance/financeSlice"
+import assetsReducer, { ASSETS_STORAGE_KEY } from "@/features/assets/assetSlice"
+import settingsReducer, { SETTINGS_STORAGE_KEY } from "@/features/settings/settingsSlice"
 
 export const store = configureStore({
   reducer: {
@@ -17,6 +19,8 @@ export const store = configureStore({
     projects: projectReducer,
     crm: crmReducer,
     finance: financeReducer,
+    assets: assetsReducer,
+    settings: settingsReducer,
   },
 })
 
@@ -52,6 +56,14 @@ store.subscribe(() => {
   window.localStorage.setItem(
     FINANCE_STORAGE_KEY,
     JSON.stringify(store.getState().finance.payrolls)
+  )
+  window.localStorage.setItem(
+    ASSETS_STORAGE_KEY,
+    JSON.stringify(store.getState().assets.assets)
+  )
+  window.localStorage.setItem(
+    SETTINGS_STORAGE_KEY,
+    JSON.stringify(store.getState().settings)
   )
 })
 

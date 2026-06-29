@@ -9,12 +9,12 @@ export const selectAllCustomers = createSelector(
 )
 
 export const selectCustomerById = createSelector(
-  [selectAllCustomers, (state: RootState, id: string) => id],
+  [selectAllCustomers, (_state: RootState, id: string) => id],
   (customers, id) => customers.find((c) => c.id === id)
 )
 
 export const selectCustomersByAssignedEmployee = createSelector(
-  [selectAllCustomers, (state: RootState, employeeId: string) => employeeId],
+  [selectAllCustomers, (_state: RootState, employeeId: string) => employeeId],
   (customers, employeeId) => customers.filter((c) => c.assignedEmployeeId === employeeId)
 )
 
@@ -39,7 +39,7 @@ export const selectNegotiationsCount = createSelector(
 )
 
 export const selectCustomersByStatus = createSelector(
-  [selectAllCustomers, (state: RootState, status: string) => status],
+  [selectAllCustomers, (_state: RootState, status: string) => status],
   (customers, status) => {
     if (status === "All") return customers
     return customers.filter((c) => c.status === status)

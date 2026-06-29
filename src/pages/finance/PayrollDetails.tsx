@@ -9,6 +9,7 @@ import { selectPayrollById } from "@/features/finance/financeSelectors"
 import { markAsPaid } from "@/features/finance/financeSlice"
 import { selectLeaveRequestsByEmployeeId } from "@/features/leave/leaveSelectors"
 import { selectAttendanceByEmployeeId } from "@/features/attendance/attendanceSelectors"
+import type { AttendanceRecord } from "@/features/attendance/attendanceTypes"
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -42,7 +43,7 @@ export default function PayrollDetails() {
       const monthIndex = MONTHS.indexOf(payroll.month)
 
       // Attendance
-      attendanceRecords.forEach((record) => {
+      attendanceRecords.forEach((record: AttendanceRecord) => {
         const recordDate = new Date(record.date)
         if (recordDate.getMonth() === monthIndex && recordDate.getFullYear() === payroll.year) {
           if (record.status === "Present") presentDays++

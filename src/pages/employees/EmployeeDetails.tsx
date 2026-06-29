@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom"
-import { AlertCircle, ArrowLeft, Edit2, FolderKanban, Mail, Phone, UserRound, Building2 } from "lucide-react"
+import { AlertCircle, ArrowLeft, Edit2, FolderKanban, Mail, Phone, UserRound, Building2, Package } from "lucide-react"
 import { useAppSelector } from "@/app/store"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import {
 } from "@/features/leave/leaveSelectors"
 import { selectProjectsByEmployeeId } from "@/features/projects/projectSelectors"
 import { selectCustomersByAssignedEmployee } from "@/features/crm/crmSelectors"
+import { selectAssetsByEmployeeId } from "@/features/assets/assetSelectors"
 
 const formatSalary = (salary: number) =>
   new Intl.NumberFormat("en-US", {
@@ -58,6 +59,9 @@ export default function EmployeeDetails() {
   )
   const managedClients = useAppSelector((state) =>
     employee ? selectCustomersByAssignedEmployee(state, employee.id) : []
+  )
+  const assignedAssets = useAppSelector((state) =>
+    employee ? selectAssetsByEmployeeId(state, employee.id) : []
   )
 
   if (!employee) {
@@ -277,6 +281,43 @@ export default function EmployeeDetails() {
                       {client.status} · {client.industry}
                     </p>
                   </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="glass-card shadow-sm border border-border/60 max-w-5xl rounded-2xl overflow-hidden">
+        <CardHeader className="border-b border-border/50 bg-muted/10 pb-4">
+          <CardTitle className="text-base font-bold text-foreground">Assigned Assets</CardTitle>
+          <CardDescription className="text-xs">
+            Hardware and equipment assigned to this employee.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6 md:p-8">
+          {assignedAssets.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-4">No assets assigned to this employee.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {assignedAssets.map((asset) => (
+                <Link
+                  key={asset.id}
+                  to={`/assets/${asset.id}`}
+                  className="flex items-center gap-3 border border-border/60 rounded-lg bg-muted/10 px-4 py-3 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-border/50">
+                    <Package className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-foreground truncate">{asset.assetName}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {asset.assetCode} · {asset.category}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-[10px]">
+                    {asset.status}
+                  </Badge>
                 </Link>
               ))}
             </div>

@@ -15,3 +15,6 @@ export const selectAttendanceCountByDateAndStatus = (
   status: AttendanceStatus
 ) => selectAttendanceByDate(state, date).filter((record) => record.status === status).length
 
+export const selectAttendanceByEmployeeId = (state: RootState, employeeId: string) =>
+  selectAttendanceRecords(state).filter((record) => record.employeeId === employeeId)
+

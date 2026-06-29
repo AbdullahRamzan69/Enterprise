@@ -9,12 +9,12 @@ export const selectAllPayrolls = createSelector(
 )
 
 export const selectPayrollById = createSelector(
-  [selectAllPayrolls, (state: RootState, id: string) => id],
+  [selectAllPayrolls, (_state: RootState, id: string) => id],
   (payrolls, id) => payrolls.find((p) => p.id === id)
 )
 
 export const selectPayrollsByEmployeeId = createSelector(
-  [selectAllPayrolls, (state: RootState, employeeId: string) => employeeId],
+  [selectAllPayrolls, (_state: RootState, employeeId: string) => employeeId],
   (payrolls, employeeId) => payrolls.filter((p) => p.employeeId === employeeId)
 )
 
@@ -69,6 +69,6 @@ export const selectTotalDeductions = createSelector(
 )
 
 export const selectPayrollsByMonthAndYear = createSelector(
-  [selectAllPayrolls, (state: RootState, month: string) => month, (state: RootState, year: number) => year],
+  [selectAllPayrolls, (_state: RootState, month: string) => month, (_state: RootState, year: number) => year],
   (payrolls, month, year) => payrolls.filter((p) => p.month === month && p.year === year)
 )
