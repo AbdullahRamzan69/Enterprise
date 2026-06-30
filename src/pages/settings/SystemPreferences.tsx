@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Settings as SettingsIcon, Save, Moon, Sun, Monitor, Bell, LayoutGrid } from "lucide-react"
+import { Save, Moon, Sun, Monitor, Bell, LayoutGrid } from "lucide-react"
 import { useAppDispatch, useAppSelector } from "@/app/store"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
