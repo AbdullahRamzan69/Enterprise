@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import {  useNavigate } from "react-router-dom"
 import {
   Search,
-  Plus,
   Eye,
   Edit2,
   Trash2,
@@ -149,12 +148,7 @@ export default function RecruitmentList() {
             Track candidates, interview stages, and hiring decisions.
           </p>
         </div>
-        <Button asChild size="sm" className="bg-primary hover:bg-primary/95 text-primary-foreground shadow-sm rounded-lg text-xs">
-          <Link to="/recruitment/new">
-            <Plus className="w-4 h-4 mr-1.5" />
-            Add Candidate
-          </Link>
-        </Button>
+       
       </div>
 
       <div className="flex flex-col xl:flex-row gap-3.5 bg-card border border-border/60 p-4 rounded-xl shadow-sm">

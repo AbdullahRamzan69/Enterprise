@@ -1,23 +1,24 @@
-import { NavLink } from "react-router-dom"
+import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
   CalendarCheck,
   CalendarOff,
   UserPlus,
+  BriefcaseBusiness,
   Handshake,
   FolderKanban,
   Coins,
   Package,
   Settings,
   Building2,
-  X
-} from "lucide-react"
-import { cn } from "@/lib/utils"
+  X,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface SidebarProps {
-  className?: string
-  onCloseMobile?: () => void
+  className?: string;
+  onCloseMobile?: () => void;
 }
 
 export const sidebarMenuItems = [
@@ -26,19 +27,20 @@ export const sidebarMenuItems = [
   { label: "Attendance", path: "/attendance", icon: CalendarCheck },
   { label: "Leave", path: "/leave", icon: CalendarOff },
   { label: "Recruitment", path: "/recruitment", icon: UserPlus },
+  { label: "Jobs", path: "/jobs", icon: BriefcaseBusiness },
   { label: "CRM", path: "/crm", icon: Handshake },
   { label: "Projects", path: "/projects", icon: FolderKanban },
   { label: "Finance", path: "/finance", icon: Coins },
   { label: "Assets", path: "/assets", icon: Package },
   { label: "Settings", path: "/settings", icon: Settings },
-]
+];
 
 export function Sidebar({ className, onCloseMobile }: SidebarProps) {
   return (
     <aside
       className={cn(
         "flex flex-col h-full bg-card border-r border-border text-card-foreground select-none",
-        className
+        className,
       )}
     >
       {/* Brand Header */}
@@ -64,7 +66,7 @@ export function Sidebar({ className, onCloseMobile }: SidebarProps) {
       {/* Navigation Links */}
       <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
         {sidebarMenuItems.map((item) => {
-          const Icon = item.icon
+          const Icon = item.icon;
           return (
             <NavLink
               key={item.label}
@@ -75,7 +77,7 @@ export function Sidebar({ className, onCloseMobile }: SidebarProps) {
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-md shadow-primary/10"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )
               }
             >
@@ -84,7 +86,9 @@ export function Sidebar({ className, onCloseMobile }: SidebarProps) {
                   <Icon
                     className={cn(
                       "w-4 h-4 transition-transform duration-200 group-hover:scale-110",
-                      isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
+                      isActive
+                        ? "text-primary-foreground"
+                        : "text-muted-foreground group-hover:text-foreground",
                     )}
                   />
                   <span>{item.label}</span>
@@ -94,7 +98,7 @@ export function Sidebar({ className, onCloseMobile }: SidebarProps) {
                 </>
               )}
             </NavLink>
-          )
+          );
         })}
       </nav>
 
@@ -115,5 +119,5 @@ export function Sidebar({ className, onCloseMobile }: SidebarProps) {
         </div>
       </div>
     </aside>
-  )
+  );
 }

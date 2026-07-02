@@ -1,6 +1,18 @@
-import { Outlet, Link, useLocation } from "react-router-dom"
-import { Building2, Users, Briefcase, Calendar, FileText, DollarSign, Package, Settings as SettingsIcon, ChevronRight } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Outlet, Link, useLocation } from "react-router-dom";
+import {
+  Building2,
+  Users,
+  Briefcase,
+  Calendar,
+  FileText,
+  DollarSign,
+  Package,
+  Settings as SettingsIcon,
+  ChevronRight,
+  Shield,
+  KeyRound,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Company Profile", href: "/settings/company", icon: Building2 },
@@ -10,12 +22,22 @@ const navigation = [
   { name: "Leave Policies", href: "/settings/leave-policies", icon: FileText },
   { name: "Payroll Settings", href: "/settings/payroll", icon: DollarSign },
   { name: "Asset Categories", href: "/settings/assets", icon: Package },
-  { name: "System Preferences", href: "/settings/preferences", icon: SettingsIcon },
-]
+  { name: "Users", href: "/settings/users", icon: Shield },
+  {
+    name: "Roles & Permissions",
+    href: "/settings/roles-permissions",
+    icon: KeyRound,
+  },
+  {
+    name: "System Preferences",
+    href: "/settings/preferences",
+    icon: SettingsIcon,
+  },
+];
 
 export default function Settings() {
-  const location = useLocation()
-  const currentPath = location.pathname
+  const location = useLocation();
+  const currentPath = location.pathname;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -33,7 +55,10 @@ export default function Settings() {
         <div className="lg:w-64 shrink-0">
           <nav className="space-y-1">
             {navigation.map((item) => {
-              const isActive = currentPath === item.href || (item.href !== "/settings" && currentPath.startsWith(item.href))
+              const isActive =
+                currentPath === item.href ||
+                (item.href !== "/settings" &&
+                  currentPath.startsWith(item.href));
               return (
                 <Link
                   key={item.name}
@@ -42,14 +67,14 @@ export default function Settings() {
                     "flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors",
                     isActive
                       ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
                 >
                   <item.icon className="w-4 h-4" />
                   <span className="flex-1">{item.name}</span>
                   {isActive && <ChevronRight className="w-4 h-4" />}
                 </Link>
-              )
+              );
             })}
           </nav>
         </div>
@@ -60,5 +85,5 @@ export default function Settings() {
         </div>
       </div>
     </div>
-  )
+  );
 }
